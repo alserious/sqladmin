@@ -37,6 +37,7 @@ from sqladmin.helpers import (
     get_object_identifier,
     is_async_session_maker,
     slugify_action_name,
+    parse_csv,
 )
 from sqladmin.models import BaseView, ModelView
 from sqladmin.templating import Jinja2Templates
@@ -181,14 +182,14 @@ class BaseAdmin:
                     func, "_label"
                 )
             if getattr(func, "_add_in_detail"):
-                view_instance._custom_actions_in_detail[
-                    getattr(func, "_slug")
-                ] = getattr(func, "_label")
+                view_instance._custom_actions_in_detail[getattr(func, "_slug")] = (
+                    getattr(func, "_label")
+                )
 
             if getattr(func, "_confirmation_message"):
-                view_instance._custom_actions_confirmation[
-                    getattr(func, "_slug")
-                ] = getattr(func, "_confirmation_message")
+                view_instance._custom_actions_confirmation[getattr(func, "_slug")] = (
+                    getattr(func, "_confirmation_message")
+                )
 
     def _handle_expose_decorated_func(
         self,
@@ -310,6 +311,11 @@ class BaseAdminView(BaseAdmin):
         if request.path_params["export_type"] not in model_view.export_types:
             raise HTTPException(status_code=404)
 
+    async def _import(self, request: Request) -> None:
+        model_view = self._find_model_view(request.path_params["identity"])
+        if not model_view.can_import or not model_view.is_accessible(request):
+            raise HTTPException(status_code=403)
+
 
 class Admin(BaseAdminView):
     """Main entrypoint to admin interface.
@@ -413,6 +419,12 @@ class Admin(BaseAdminView):
             ),
             Route(
                 "/{identity}/export/{export_type}", endpoint=self.export, name="export"
+            ),
+            Route(
+                "/{identity}/import",
+                endpoint=self.import_endpoint,
+                name="import",
+                methods=["POST"],
             ),
             Route(
                 "/{identity}/ajax/lookup", endpoint=self.ajax_lookup, name="ajax_lookup"
@@ -618,6 +630,35 @@ class Admin(BaseAdminView):
             request=request, limit=model_view.export_max_rows
         )
         return await model_view.export_data(rows, export_type=export_type)
+
+    @login_required
+    async def import_endpoint(self, request: Request) -> Response:
+        """Import model endpoint."""
+
+        await self._import(request)
+
+        identity = request.path_params["identity"]
+        model_view = self._find_model_view(identity)
+
+        row = await parse_csv(request)
+        # print(row)
+        # async for row in iter_csv(request):
+        try:
+            obj = await model_view.insert_many_models(request, row)
+        except Exception as e:
+            logger.exception(e)
+            # context["error"] = str(e)
+            context = {
+                "status-code": "1",
+                "message": "2",
+            }
+            return await self.templates.TemplateResponse(
+                request, model_view.list_template, context, status_code=400
+            )
+
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=identity), status_code=302
+        )
 
     async def login(self, request: Request) -> Response:
         assert self.authentication_backend is not None

@@ -15,6 +15,7 @@ from typing import (
     TypeVar,
 )
 
+from starlette.requests import Request
 from sqlalchemy import Column, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import RelationshipProperty, sessionmaker
@@ -170,6 +171,14 @@ def stream_to_csv(
     """
     writer = csv.writer(_PseudoBuffer())
     return callback(writer)  # type: ignore
+
+
+async def parse_csv(request) -> list[dict[str, Any]]:
+    async with request.form(max_files=1) as form:
+        csv_content = await form.get("csvfile").read()
+        csv_content = csv_content.decode("utf-8").splitlines()
+        reader = csv.DictReader(csv_content)
+        return list(reader)
 
 
 def get_primary_keys(model: Any) -> tuple[Column, ...]:

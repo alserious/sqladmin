@@ -235,6 +235,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     Default value is set to `True`.
     """
 
+    can_import: ClassVar[bool] = False
+    """Permission for importing lists of Models.
+    Default value is set to `False`.
+    """
+
     # List page
     column_list: ClassVar[Union[str, Sequence[MODEL_ATTR]]] = []
     """List of columns to display in `List` page.
@@ -1005,6 +1010,11 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
     async def insert_model(self, request: Request, data: dict) -> Any:
         return await Query(self).insert(data, request)
+
+    async def insert_many_models(
+        self, request: Request, data: list[dict[str, Any]]
+    ) -> Any:
+        return await Query(self).insert_many(data, request)
 
     async def update_model(self, request: Request, pk: str, data: dict) -> Any:
         return await Query(self).update(pk, data, request)
