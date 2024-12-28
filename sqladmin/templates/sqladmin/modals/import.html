@@ -13,18 +13,18 @@
         data-bs-dismiss="modal"
         aria-label="Close"
       ></button>
-      <div class="modal-status bg-info"></div>
-      <form action="import" method="POST" enctype="multipart/form-data">
-        <div class="row">
-          {% if error %}
-          <div class="alert alert-danger" role="alert">saddasdaads</div>
-          <!-- <div class="alert alert-danger" role="alert">{{ error }}</div> -->
-          {% endif %}
-        </div>
+      <form
+        id="modal-import-form"
+        action="import"
+        method="POST"
+        enctype="multipart/form-data"
+      >
         <div class="modal-body text-center py-4">
           <h3>Import CSV</h3>
           <input id="csvfile" name="csvfile" type="file" accept="text/csv" />
         </div>
+        <div id="modal-import-text" class="d-none" role="alert"></div>
+        <!-- <div id="modal-import-text" class="text-muted"></div> -->
         <div class="modal-footer">
           <div class="w-100">
             <div class="row">

@@ -633,8 +633,6 @@ class Admin(BaseAdminView):
 
     @login_required
     async def import_endpoint(self, request: Request) -> Response:
-        """Import model endpoint."""
-
         await self._import(request)
 
         identity = request.path_params["identity"]
@@ -642,50 +640,60 @@ class Admin(BaseAdminView):
 
         async with request.form(max_files=1) as form:
             csv_file = form.get("csvfile")
-            if not csv_file or not csv_file.filename.endswith(".csv"):
-                # model_view = self._find_model_view(request.path_params["identity"])
-                pagination = await model_view.list(request)
-                pagination.add_pagination_urls(request.url)
+            # if not csv_file or not csv_file.filename.endswith(".csv"):
+            #     # model_view = self._find_model_view(request.path_params["identity"])
+            #     pagination = await model_view.list(request)
+            #     pagination.add_pagination_urls(request.url)
 
-                request_page = model_view.validate_page_number(
-                    request.query_params.get("page"), 1
-                )
+            #     request_page = model_view.validate_page_number(
+            #         request.query_params.get("page"), 1
+            #     )
 
-                if request_page > pagination.page:
-                    return RedirectResponse(
-                        request.url.include_query_params(page=pagination.page), status_code=302
-                    )
+            #     if request_page > pagination.page:
+            #         return RedirectResponse(
+            #             request.url.include_query_params(page=pagination.page), status_code=302
+            #         )
 
-                context = {"model_view": model_view, "pagination": pagination, "error":"ERROR"}
-                
+            #     context = {"model_view": model_view, "pagination": pagination, "error":"ERROR"}
+
+            #     return await self.templates.TemplateResponse(
+            #         request, model_view.list_template, context, status_code=400
+            #     )
+
+            import csv
+
+            csv_content = await csv_file.read()
+            csv_content = csv_content.decode("utf-8").splitlines()
+            reader = csv.DictReader(csv_content)
+
+            # csv_content = csv_content.decode("utf-8").splitlines()
+            # reader = csv.DictReader(csv_content)
+            # return list(reader)
+
+            # row = await parse_csv(request)
+            # print(row)
+            # async for row in iter_csv(request):
+            try:
+                obj = await model_view.insert_many_models(request, list(reader))
+            except Exception as e:
+                logger.exception(e)
+                # return RedirectResponse(
+                #     url=request.url_for("admin:list", identity=identity),
+                #     status_code=302,
+                # )
+                # # context["error"] = str(e)
+                context = {
+                    "status-code": "1",
+                    "message": "2",
+                }
+                print("here")
                 return await self.templates.TemplateResponse(
                     request, model_view.list_template, context, status_code=400
                 )
-        
-        
-        # csv_content = csv_content.decode("utf-8").splitlines()
-        # reader = csv.DictReader(csv_content)
-        # return list(reader)
 
-        # row = await parse_csv(request)
-        # # print(row)
-        # # async for row in iter_csv(request):
-        # try:
-        #     obj = await model_view.insert_many_models(request, row)
-        # except Exception as e:
-        #     logger.exception(e)
-        #     # context["error"] = str(e)
-        #     context = {
-        #         "status-code": "1",
-        #         "message": "2",
-        #     }
-        #     return await self.templates.TemplateResponse(
-        #         request, model_view.list_template, context, status_code=400
-        #     )
-
-        # return RedirectResponse(
-        #     url=request.url_for("admin:list", identity=identity), status_code=302
-        # )
+        return RedirectResponse(
+            url=request.url_for("admin:list", identity=identity), status_code=302
+        )
 
     async def login(self, request: Request) -> Response:
         assert self.authentication_backend is not None
