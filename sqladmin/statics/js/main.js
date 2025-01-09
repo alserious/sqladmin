@@ -36,17 +36,16 @@ $(document).on('shown.bs.modal', '#modal-import', function () {
       type: frm.attr('method'),
       url: frm.attr('action'),
       data: formData,
-      // cache: false,
       processData: false,
       contentType: false,
       success: function (data, textStatus, jqXHR) {
-        console.log('Submission was successful.');
+        console.log('Import CSV was successful.');
         window.location.href = 'list';
       },
       error: function (jqXHR, textStatus, errorThrown) {
         console.log('An error occurred.');
         console.log(jqXHR.responseText);
-        $('#modal-import-text').text('Failed parse csv file.');
+        $('#modal-import-text').text(jqXHR.responseText);
         $('#modal-import-text').attr('class', 'alert alert-danger');;
       },
     });

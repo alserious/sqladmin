@@ -1,17 +1,19 @@
 import logging
-
+import asyncio
 
 logging.basicConfig(level="DEBUG")
 
 from sqlalchemy import Column, Integer, String, create_engine
+from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
 from sqlalchemy.orm import declarative_base
 from fastapi_storages.integrations.sqlalchemy import FileType
 from fastapi_storages import FileSystemStorage
 
 
 Base = declarative_base()
-engine = create_engine(
-    "sqlite:///example.db",
+# engine = create_engine(
+engine = create_async_engine(
+    "sqlite+aiosqlite:///example.db",
     connect_args={"check_same_thread": False},
 )
 storage = FileSystemStorage(path="/")
@@ -26,7 +28,13 @@ class User(Base):
     file = Column(FileType(storage=storage))
 
 
-Base.metadata.create_all(engine)  # Create tables
+async def init_models():
+    async with engine.begin() as conn:
+        await conn.run_sync(Base.metadata.drop_all)
+        await conn.run_sync(Base.metadata.create_all)
+
+
+# Base.metadata.create_all(engine)  # Create tables
 
 import sys
 

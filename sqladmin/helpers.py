@@ -175,7 +175,10 @@ def stream_to_csv(
 
 async def parse_csv(request) -> list[dict[str, Any]]:
     async with request.form(max_files=1) as form:
-        csv_content = await form.get("csvfile").read()
+        csv_file = form.get("csvfile")
+        if not csv_file or not csv_file.filename.endswith(".csv"):
+            raise csv.Error
+        csv_content = await csv_file.read()
         csv_content = csv_content.decode("utf-8").splitlines()
         reader = csv.DictReader(csv_content)
         return list(reader)
