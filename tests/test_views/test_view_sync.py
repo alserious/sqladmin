@@ -153,12 +153,14 @@ class UserAdmin(ModelView, model=User):
     save_as = True
     form_create_rules = ["name", "email", "addresses", "profile", "birthdate", "status"]
     form_edit_rules = ["name", "email", "addresses", "profile", "birthdate"]
+    can_import = True
 
 
 class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
     name_plural = "Addresses"
     export_max_rows = 3
+    can_import = True
 
 
 class ProfileAdmin(ModelView, model=Profile):
@@ -787,3 +789,74 @@ def test_export_bad_type_is_404(client: TestClient) -> None:
 def test_export_permission(client: TestClient) -> None:
     response = client.get("/admin/movie/export/csv")
     assert response.status_code == 403
+
+
+def test_import_csv_file(client: TestClient) -> None:
+    client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"name,status\r\nUSER_1,ACTIVE\r\nUSER_2,DEACTIVE\r\n",
+                "text/csv",
+            )
+        },
+    )
+    with session_maker() as s:
+        users = list(s.execute(select(User).order_by(User.id)).scalars())
+    assert users[0].name == "USER_1"
+    assert users[0].id == 1
+    assert users[0].status == Status.ACTIVE
+    assert users[1].name == "USER_2"
+    assert users[1].id == 2
+    assert users[1].status == Status.DEACTIVE
+
+
+def test_import_csv_file_with_fk(client: TestClient) -> None:
+    client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"id,name\r\n1,USER_1\r\n2,USER_2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    with session_maker() as s:
+        users = list(s.execute(select(User).order_by(User.id)).scalars())
+        assert users[0].name == "USER_1"
+        assert users[0].id == 1
+        assert users[1].name == "USER_2"
+        assert users[1].id == 2
+
+    client.post(
+        "/admin/address/import",
+        files={
+            "csvfile": (
+                "address.csv",
+                b"id,user_id\r\n1,1\r\n2,2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    with session_maker() as s:
+        addresses = list(s.execute(select(Address).order_by(Address.id)).scalars())
+        assert addresses[0].id == 1
+        assert addresses[0].user.name == "USER_1"
+        assert addresses[0].user.id == 1
+        assert addresses[1].id == 2
+        assert addresses[1].user.name == "USER_2"
+        assert addresses[1].user.id == 2
+
+
+# TODO add many fk relation
+
+
+def test_import_csv_button(client: TestClient) -> None:
+    response = client.get("/admin/user/list")
+    assert response.status_code == 200
+    assert (
+        '<input id="csvfile" name="csvfile" type="file" accept="text/csv" />'
+        in response.text
+    )
