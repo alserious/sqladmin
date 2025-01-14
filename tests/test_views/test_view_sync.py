@@ -851,7 +851,42 @@ def test_import_csv_file_with_fk(client: TestClient) -> None:
 
 
 # TODO add many fk relation
+def test_import_csv_file_with_many_fk(client: TestClient) -> None:
+    client.post(
+        "/admin/user/import",
+        files={
+            "csvfile": (
+                "user.csv",
+                b"id,name\r\n1,USER_1\r\n2,USER_2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    with session_maker() as s:
+        users = list(s.execute(select(User).order_by(User.id)).scalars())
+        assert users[0].name == "USER_1"
+        assert users[0].id == 1
+        assert users[1].name == "USER_2"
+        assert users[1].id == 2
 
+    client.post(
+        "/admin/address/import",
+        files={
+            "csvfile": (
+                "address.csv",
+                b"id,user_id\r\n1,1\r\n2,2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    with session_maker() as s:
+        addresses = list(s.execute(select(Address).order_by(Address.id)).scalars())
+        assert addresses[0].id == 1
+        assert addresses[0].user.name == "USER_1"
+        assert addresses[0].user.id == 1
+        assert addresses[1].id == 2
+        assert addresses[1].user.name == "USER_2"
+        assert addresses[1].user.id == 2
 
 def test_import_csv_button(client: TestClient) -> None:
     response = client.get("/admin/user/list")
@@ -860,3 +895,31 @@ def test_import_csv_button(client: TestClient) -> None:
         '<input id="csvfile" name="csvfile" type="file" accept="text/csv" />'
         in response.text
     )
+
+
+def test_import_csv_bad_type_is_404(client: TestClient) -> None:
+    response = client.post(
+        "/admin/notfound/import",
+        files={
+            "csvfile": (
+                "notfound.csv",
+                b"id\r\n1\r\n2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    assert response.status_code == 404
+
+
+def test_import_csv_permission(client: TestClient) -> None:
+    response = client.post(
+        "/admin/movie/import",
+        files={
+            "csvfile": (
+                "movie.csv",
+                b"id\r\n1\r\n2\r\n",
+                "text/csv",
+            )
+        },
+    )
+    assert response.status_code == 403

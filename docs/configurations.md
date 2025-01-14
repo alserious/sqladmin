@@ -237,6 +237,19 @@ The export options can be set per model and includes the following options:
 * `export_max_rows`: Maximum number of rows to be exported. Default value is `0` which means unlimited.
 * `export_types`: List of export types to be enabled. Default value is `["csv","json"]`.
 
+
+## Import options
+
+SQLAdmin supports exporting data in the list page. Currently only CSV export is supported.
+The export options can be set per model and includes the following options:
+
+* `can_export`: If the model can be exported. Default value is `True`.
+* `column_export_list`: List of columns to include in the export data. Default is all model columns.
+* `column_export_exclude_list`: List of columns to exclude in the export data.
+* `export_max_rows`: Maximum number of rows to be exported. Default value is `0` which means unlimited.
+* `export_types`: List of export types to be enabled. Default value is `["csv","json"]`.
+
+
 ## Templates
 
 The template files are built using Jinja2 and can be completely overridden in the configurations.
