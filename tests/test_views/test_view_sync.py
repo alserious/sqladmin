@@ -825,10 +825,10 @@ def test_import_csv_file_with_fk(client: TestClient) -> None:
     )
     with session_maker() as s:
         users = list(s.execute(select(User).order_by(User.id)).scalars())
-        assert users[0].name == "USER_1"
-        assert users[0].id == 1
-        assert users[1].name == "USER_2"
-        assert users[1].id == 2
+    assert users[0].name == "USER_1"
+    assert users[0].id == 1
+    assert users[1].name == "USER_2"
+    assert users[1].id == 2
 
     client.post(
         "/admin/address/import",
@@ -841,13 +841,17 @@ def test_import_csv_file_with_fk(client: TestClient) -> None:
         },
     )
     with session_maker() as s:
-        addresses = list(s.execute(select(Address).order_by(Address.id)).scalars())
-        assert addresses[0].id == 1
-        assert addresses[0].user.name == "USER_1"
-        assert addresses[0].user.id == 1
-        assert addresses[1].id == 2
-        assert addresses[1].user.name == "USER_2"
-        assert addresses[1].user.id == 2
+        addresses = list(
+            s.execute(
+                select(Address).options(selectinload(Address.user)).order_by(Address.id)
+            ).scalars()
+        )
+    assert addresses[0].id == 1
+    assert addresses[0].user.name == "USER_1"
+    assert addresses[0].user.id == 1
+    assert addresses[1].id == 2
+    assert addresses[1].user.name == "USER_2"
+    assert addresses[1].user.id == 2
 
 
 # TODO add many fk relation
@@ -864,10 +868,10 @@ def test_import_csv_file_with_many_fk(client: TestClient) -> None:
     )
     with session_maker() as s:
         users = list(s.execute(select(User).order_by(User.id)).scalars())
-        assert users[0].name == "USER_1"
-        assert users[0].id == 1
-        assert users[1].name == "USER_2"
-        assert users[1].id == 2
+    assert users[0].name == "USER_1"
+    assert users[0].id == 1
+    assert users[1].name == "USER_2"
+    assert users[1].id == 2
 
     client.post(
         "/admin/address/import",
@@ -880,13 +884,18 @@ def test_import_csv_file_with_many_fk(client: TestClient) -> None:
         },
     )
     with session_maker() as s:
-        addresses = list(s.execute(select(Address).order_by(Address.id)).scalars())
-        assert addresses[0].id == 1
-        assert addresses[0].user.name == "USER_1"
-        assert addresses[0].user.id == 1
-        assert addresses[1].id == 2
-        assert addresses[1].user.name == "USER_2"
-        assert addresses[1].user.id == 2
+        addresses = list(
+            s.execute(
+                select(Address).options(selectinload(Address.user)).order_by(Address.id)
+            ).scalars()
+        )
+    assert addresses[0].id == 1
+    assert addresses[0].user.name == "USER_1"
+    assert addresses[0].user.id == 1
+    assert addresses[1].id == 2
+    assert addresses[1].user.name == "USER_2"
+    assert addresses[1].user.id == 2
+
 
 def test_import_csv_button(client: TestClient) -> None:
     response = client.get("/admin/user/list")
