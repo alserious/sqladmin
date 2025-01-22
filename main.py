@@ -1,7 +1,7 @@
 import logging
 import asyncio
 
-logging.basicConfig(level="DEBUG")
+logging.basicConfig(level="INFO")
 
 from sqlalchemy import Column, Integer, String, create_engine, ForeignKey
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
@@ -76,8 +76,9 @@ admin = Admin(app, engine)
 
 
 class UserAdmin(ModelView, model=User):
-    column_list = [User.id, User.addresses]
+    column_list = [User.id, User.name, User.addresses]
     # column_list = [User.id, User.name, User.file, User.addresses]
+    column_import_list = [User.name, User.file]
     can_import = True
 
 
@@ -95,3 +96,4 @@ import uvicorn
 if __name__ == "__main__":
     asyncio.run(init_models())
     uvicorn.run("main:app", host="0.0.0.0", reload=True)
+

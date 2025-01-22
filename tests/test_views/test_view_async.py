@@ -145,6 +145,7 @@ class UserAdmin(ModelView, model=User):
     column_searchable_list = [User.name]
     column_sortable_list = [User.id]
     column_export_list = [User.name, User.status]
+    column_import_list = [User.name, User.status]
     column_formatters = {
         User.addresses_formattable: lambda m, a: [
             f"Formatted {a}" for a in m.addresses_formattable
@@ -165,6 +166,7 @@ class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
     name_plural = "Addresses"
     export_max_rows = 3
+    column_import_list = ["id", "user_id"]
     can_import = True
 
 
@@ -833,7 +835,7 @@ async def test_import_csv_file_with_fk(client: AsyncClient) -> None:
         files={
             "csvfile": (
                 "user.csv",
-                b"id,name\r\n1,USER_1\r\n2,USER_2\r\n",
+                b"id,name,status\r\n1,USER_1,ACTIVE\r\n2,USER_2,DEACTIVE\r\n",
                 "text/csv",
             )
         },
@@ -876,7 +878,7 @@ async def test_import_csv_file_with_many_fk(client: AsyncClient) -> None:
         files={
             "csvfile": (
                 "user.csv",
-                b"id,name\r\n1,USER_1\r\n2,USER_2\r\n",
+                b"id,name,status\r\n1,USER_1,ACTIVE\r\n2,USER_2,DEACTIVE\r\n",
                 "text/csv",
             )
         },

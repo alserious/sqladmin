@@ -637,9 +637,21 @@ class Admin(BaseAdminView):
 
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
+        ips = model_view._import_prop_names
+        logger.info(ips)
 
         try:
             data = await parse_csv(request)
+            logger.info(data)
+            # for item in data:
+            #     for prop_name in model_view._import_prop_names:
+            #         item.pop(prop_name, None)
+
+            data = [{n: item[n] for n in ips} for item in data]
+            # data = [(filter(lambda d: d in a, item)) for item in data]
+            # data = [{'id': '1', 'addresses': [1, 2], 'name': '1'}]
+            logger.info("HERE")
+            logger.info(data)
             await model_view.insert_many_models(request, data)
         except Exception as e:
             logger.exception(e)

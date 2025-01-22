@@ -121,6 +121,8 @@ class Query:
                     related_stmt = self._get_to_many_stmt(relation, value)
                     result = await session.execute(related_stmt)
                     related_objs = result.scalars().all()
+                    # TODO
+                    print(obj, key, related_objs)
                     setattr(obj, key, related_objs)
                 elif direction == "ONETOONE":
                     related_stmt = self._get_to_one_stmt(relation, value)
