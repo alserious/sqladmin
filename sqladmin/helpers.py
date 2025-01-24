@@ -181,7 +181,7 @@ async def parse_csv(request) -> list[dict[str, Any]]:
         csv_content = await csv_file.read()
         csv_content = csv_content.decode("utf-8").splitlines()
         # TODO check delimeter
-        reader = csv.DictReader(csv_content)
+        reader = csv.DictReader(csv_content, delimiter=";")
         return list(reader)
 
 

@@ -78,7 +78,7 @@ admin = Admin(app, engine)
 class UserAdmin(ModelView, model=User):
     column_list = [User.id, User.name, User.addresses]
     # column_list = [User.id, User.name, User.file, User.addresses]
-    column_import_list = [User.name, User.file]
+    column_import_list = [User.name, User.addresses]
     can_import = True
 
 
