@@ -212,6 +212,7 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     is_async: ClassVar[bool] = False
     is_model: ClassVar[bool] = True
     ajax_lookup_url: ClassVar[str] = ""
+    importing: ClassVar[bool] = False
 
     name_plural: ClassVar[str] = ""
     """Plural name of ModelView.

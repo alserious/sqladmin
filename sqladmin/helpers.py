@@ -180,9 +180,12 @@ async def parse_csv(request) -> list[dict[str, Any]]:
             raise csv.Error
         csv_content = await csv_file.read()
         csv_content = csv_content.decode("utf-8").splitlines()
-        # TODO check delimeter
-        reader = csv.DictReader(csv_content, delimiter=";")
-        return list(reader)
+        reader = list(csv.DictReader(csv_content, delimiter=";"))
+        for row in reader:
+            for k, v in row.items():
+                if v and "," in v:
+                    row[k] = v.split(",")
+        return reader
 
 
 def get_primary_keys(model: Any) -> tuple[Column, ...]:

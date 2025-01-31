@@ -799,7 +799,7 @@ def test_import_csv_file(client: TestClient) -> None:
         files={
             "csvfile": (
                 "user.csv",
-                b"name,status\r\nUSER_1,ACTIVE\r\nUSER_2,DEACTIVE\r\n",
+                b"name;status\r\nUSER_1;ACTIVE\r\nUSER_2;DEACTIVE\r\n",
                 "text/csv",
             )
         },
@@ -820,7 +820,7 @@ def test_import_csv_file_with_fk(client: TestClient) -> None:
         files={
             "csvfile": (
                 "user.csv",
-                b"id,name,status\r\n1,USER_1,ACTIVE\r\n2,USER_2,DEACTIVE\r\n",
+                b"id;name;status\r\n1;USER_1;ACTIVE\r\n2;USER_2;DEACTIVE\r\n",
                 "text/csv",
             )
         },
@@ -837,7 +837,7 @@ def test_import_csv_file_with_fk(client: TestClient) -> None:
         files={
             "csvfile": (
                 "address.csv",
-                b"id,user_id\r\n1,1\r\n2,2\r\n",
+                b"id;user_id\r\n1;1\r\n2;2\r\n",
                 "text/csv",
             )
         },
@@ -863,7 +863,7 @@ def test_import_csv_file_with_many_fk(client: TestClient) -> None:
         files={
             "csvfile": (
                 "user.csv",
-                b"id,name,status\r\n1,USER_1,ACTIVE\r\n2,USER_2,DEACTIVE\r\n",
+                b"id;name;status\r\n1;USER_1;ACTIVE\r\n2;USER_2;DEACTIVE\r\n",
                 "text/csv",
             )
         },
@@ -880,7 +880,7 @@ def test_import_csv_file_with_many_fk(client: TestClient) -> None:
         files={
             "csvfile": (
                 "address.csv",
-                b"id,user_id\r\n1,1\r\n2,2\r\n",
+                b"id;user_id\r\n1;1\r\n2;2\r\n",
                 "text/csv",
             )
         },
