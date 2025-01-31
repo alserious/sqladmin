@@ -3,9 +3,9 @@ import asyncio
 
 logging.basicConfig(level="INFO")
 
-from sqlalchemy import Column, Integer, String, create_engine, ForeignKey
+from sqlalchemy import Column, Integer, String, create_engine, ForeignKey, Table
 from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
-from sqlalchemy.orm import declarative_base, relationship
+from sqlalchemy.orm import Mapped, declarative_base, relationship
 from fastapi_storages.integrations.sqlalchemy import FileType
 from fastapi_storages import FileSystemStorage
 
@@ -18,6 +18,13 @@ engine = create_async_engine(
 )
 storage = FileSystemStorage(path="/")
 
+association_table = Table(
+    "association_table",
+    Base.metadata,
+    Column("users_id", ForeignKey("users.id")),
+    Column("addresses_id", ForeignKey("addresses.id")),
+)
+
 
 class User(Base):
     __tablename__ = "users"
@@ -25,18 +32,21 @@ class User(Base):
     id = Column(Integer, primary_key=True)
     name = Column(String)
     file = Column(FileType(storage=storage))
-    addresses = relationship("Address", back_populates="user")
+    addresses: Mapped[list["Address"] | None] = relationship(
+        "Address", secondary=association_table
+    )
 
     def __str__(self) -> str:
-        return f"User {self.id}"
+        return f"{self.id}"
+
 
 class Address(Base):
     __tablename__ = "addresses"
 
     id = Column(Integer, primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
+    # user_id = Column(Integer, ForeignKey("users.id"))
 
-    user = relationship("User", back_populates="addresses")
+    # user = relationship("User", back_populates="addresses")
 
     def __str__(self) -> str:
         return f"Address {self.id}"
@@ -83,7 +93,7 @@ class UserAdmin(ModelView, model=User):
 
 
 class AddressAdmin(ModelView, model=Address):
-    column_list = [Address.id, Address.user_id]
+    # column_list = [Address.id, Address.user_id]
     # column_list = [Address.id, Address.user_id, Address.user]
     can_import = True
 
