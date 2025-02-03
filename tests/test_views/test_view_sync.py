@@ -910,15 +910,16 @@ def test_import_csv_file_with_fk(client: TestClient) -> None:
 
 
 def test_import_csv_file_with_many_to_many(client: TestClient) -> None:
+    files = {
+        "csvfile": (
+            "book.csv",
+            b"id;title;text\r\n1;cool book;Once upon a time\r\n2;good_book;Well...\r\n",
+            "text/csv",
+        )
+    }
     client.post(
         "/admin/book/import",
-        files={
-            "csvfile": (
-                "book.csv",
-                b"id;title;text\r\n1;cool book;Once upon a time\r\n2;good_book;Well...\r\n",
-                "text/csv",
-            )
-        },
+        files=files,
     )
     with session_maker() as s:
         result = s.execute(select(Book).order_by(Book.id))
@@ -928,15 +929,16 @@ def test_import_csv_file_with_many_to_many(client: TestClient) -> None:
     assert books[1].title == "good_book"
     assert books[1].id == 2
 
+    files = {
+        "csvfile": (
+            "author.csv",
+            b"name;books\r\nalex;cool book,good_book\r\nsam;cool book,good_book\r\n",
+            "text/csv",
+        )
+    }
     client.post(
         "/admin/author/import",
-        files={
-            "csvfile": (
-                "author.csv",
-                b"name;books\r\nalex;cool book,good_book\r\nsam;cool book,good_book\r\n",
-                "text/csv",
-            )
-        },
+        files=files,
     )
     with session_maker() as s:
         result = s.execute(

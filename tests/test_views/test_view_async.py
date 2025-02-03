@@ -925,16 +925,14 @@ async def test_import_csv_file_with_fk(client: AsyncClient) -> None:
 
 
 async def test_import_csv_file_with_many_to_many(client: AsyncClient) -> None:
-    await client.post(
-        "/admin/book/import",
-        files={
-            "csvfile": (
-                "book.csv",
-                b"id;title;text\r\n1;cool book;Once upon a time\r\n2;good_book;Well...\r\n",
-                "text/csv",
-            )
-        },
-    )
+    files = {
+        "csvfile": (
+            "book.csv",
+            b"id;title;text\r\n1;cool book;Once upon a time\r\n2;good_book;Well...\r\n",
+            "text/csv",
+        )
+    }
+    await client.post("/admin/book/import", files=files)
     async with session_maker() as s:
         result = await s.execute(select(Book).order_by(Book.id))
         books = list(result.scalars())
@@ -943,15 +941,16 @@ async def test_import_csv_file_with_many_to_many(client: AsyncClient) -> None:
     assert books[1].title == "good_book"
     assert books[1].id == 2
 
+    files = {
+        "csvfile": (
+            "author.csv",
+            b"name;books\r\nalex;cool book,good_book\r\nsam;cool book,good_book\r\n",
+            "text/csv",
+        )
+    }
     await client.post(
         "/admin/author/import",
-        files={
-            "csvfile": (
-                "author.csv",
-                b"name;books\r\nalex;cool book,good_book\r\nsam;cool book,good_book\r\n",
-                "text/csv",
-            )
-        },
+        files=files,
     )
     async with session_maker() as s:
         result = await s.execute(
