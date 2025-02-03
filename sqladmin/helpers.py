@@ -15,7 +15,6 @@ from typing import (
     TypeVar,
 )
 
-from starlette.requests import Request
 from sqlalchemy import Column, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import RelationshipProperty, sessionmaker

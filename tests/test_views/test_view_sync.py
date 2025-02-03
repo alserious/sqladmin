@@ -11,16 +11,16 @@ from sqlalchemy import (
     ForeignKey,
     Integer,
     String,
+    Table,
     func,
     select,
-    Table,
 )
 from sqlalchemy.orm import (
+    Mapped,
     declarative_base,
     relationship,
     selectinload,
     sessionmaker,
-    Mapped,
 )
 from starlette.applications import Starlette
 from starlette.requests import Request

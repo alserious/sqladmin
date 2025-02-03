@@ -36,8 +36,8 @@ from sqladmin.forms import WTFORMS_ATTRS, WTFORMS_ATTRS_REVERSED
 from sqladmin.helpers import (
     get_object_identifier,
     is_async_session_maker,
-    slugify_action_name,
     parse_csv,
+    slugify_action_name,
 )
 from sqladmin.models import BaseView, ModelView
 from sqladmin.templating import Jinja2Templates
