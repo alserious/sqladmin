@@ -14,9 +14,16 @@ from sqlalchemy import (
     String,
     func,
     select,
+    Table,
 )
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import declarative_base, relationship, selectinload, sessionmaker
+from sqlalchemy.orm import (
+    declarative_base,
+    relationship,
+    selectinload,
+    sessionmaker,
+    Mapped,
+)
 from starlette.applications import Starlette
 from starlette.requests import Request
 
@@ -113,6 +120,38 @@ class Movie(Base):
     id = Column(Integer, primary_key=True)
 
 
+association_table = Table(
+    "association_table",
+    Base.metadata,
+    Column("author_id", ForeignKey("authors.id")),
+    Column("book_id", ForeignKey("books.id")),
+)
+
+
+class Author(Base):
+    __tablename__ = "authors"
+
+    id = Column(Integer, primary_key=True)
+    name = Column(String)
+    books: Mapped[list["Book"] | None] = relationship(
+        "Book", secondary=association_table
+    )
+
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+
+class Book(Base):
+    __tablename__ = "books"
+
+    id = Column(Integer, primary_key=True)
+    title = Column(String)
+    text = Column(String)
+
+    def __str__(self) -> str:
+        return f"{self.title}"
+
+
 @pytest.fixture
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
@@ -186,10 +225,24 @@ class MovieAdmin(ModelView, model=Movie):
         return False
 
 
+class AuthorAdmin(ModelView, model=Author):
+    column_list = [Author.id, Author.name, Author.books]
+    column_import_list = [Author.name, Author.books]
+    can_import = True
+
+
+class BookAdmin(ModelView, model=Book):
+    column_list = [Book.id, Book.title, Book.text]
+    column_import_list = [Book.id, Book.title, Book.text]
+    can_import = True
+
+
 admin.add_view(UserAdmin)
 admin.add_view(AddressAdmin)
 admin.add_view(ProfileAdmin)
 admin.add_view(MovieAdmin)
+admin.add_view(AuthorAdmin)
+admin.add_view(BookAdmin)
 
 
 async def test_root_view(client: AsyncClient) -> None:
@@ -871,47 +924,46 @@ async def test_import_csv_file_with_fk(client: AsyncClient) -> None:
     assert addresses[1].user.id == 2
 
 
-# TODO add many fk relation
-async def test_import_csv_file_with_many_fk(client: AsyncClient) -> None:
+async def test_import_csv_file_with_many_to_many(client: AsyncClient) -> None:
     await client.post(
-        "/admin/user/import",
+        "/admin/book/import",
         files={
             "csvfile": (
-                "user.csv",
-                b"id;name;status\r\n1;USER_1;ACTIVE\r\n2;USER_2;DEACTIVE\r\n",
+                "book.csv",
+                b"id;title;text\r\n1;cool book;Once upon a time\r\n2;good_book;Well...\r\n",
                 "text/csv",
             )
         },
     )
     async with session_maker() as s:
-        result = await s.execute(select(User).order_by(User.id))
-        users = list(result.scalars())
-    assert users[0].name == "USER_1"
-    assert users[0].id == 1
-    assert users[1].name == "USER_2"
-    assert users[1].id == 2
+        result = await s.execute(select(Book).order_by(Book.id))
+        books = list(result.scalars())
+    assert books[0].title == "cool book"
+    assert books[0].id == 1
+    assert books[1].title == "good_book"
+    assert books[1].id == 2
 
     await client.post(
-        "/admin/address/import",
+        "/admin/author/import",
         files={
             "csvfile": (
-                "address.csv",
-                b"id;user_id\r\n1;1\r\n2;2\r\n",
+                "author.csv",
+                b"name;books\r\nalex;cool book,good_book\r\nsam;cool book,good_book\r\n",
                 "text/csv",
             )
         },
     )
     async with session_maker() as s:
         result = await s.execute(
-            select(Address).options(selectinload(Address.user)).order_by(Address.id)
+            select(Author).options(selectinload(Author.books)).order_by(Author.id)
         )
-        addresses = list(result.scalars())
-    assert addresses[0].id == 1
-    assert addresses[0].user.name == "USER_1"
-    assert addresses[0].user.id == 1
-    assert addresses[1].id == 2
-    assert addresses[1].user.name == "USER_2"
-    assert addresses[1].user.id == 2
+        authors = list(result.scalars())
+    assert authors[0].id == 1
+    assert authors[0].books[0].text == "Once upon a time"
+    assert authors[0].books[1].text == "Well..."
+    assert authors[1].id == 2
+    assert authors[1].books[0].text == "Once upon a time"
+    assert authors[1].books[1].text == "Well..."
 
 
 async def test_import_csv_button(client: AsyncClient) -> None:
