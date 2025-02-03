@@ -638,15 +638,15 @@ class Admin(BaseAdminView):
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
         model_view.importing = True
-        
+
         try:
             data = await parse_csv(request)
             await model_view.insert_many_models(request, data)
-            
+
         except Exception as e:
             logger.exception(e)
             return Response(content=f"Failed parse CSV file.\n{e}", status_code=400)
-        
+
         return RedirectResponse(
             url=request.url_for("admin:list", identity=identity), status_code=302
         )
