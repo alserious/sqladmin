@@ -16,7 +16,6 @@ from sqlalchemy import (
     select,
 )
 from sqlalchemy.orm import (
-    Mapped,
     declarative_base,
     relationship,
     selectinload,
@@ -130,9 +129,7 @@ class Author(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    books = relationship(
-        "Book", secondary=association_table
-    )
+    books = relationship("Book", secondary=association_table)
 
     def __str__(self) -> str:
         return f"{self.name}"
