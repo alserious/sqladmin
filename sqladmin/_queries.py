@@ -23,8 +23,9 @@ if TYPE_CHECKING:
 
 
 class Query:
-    def __init__(self, model_view: "ModelView") -> None:
+    def __init__(self, model_view: "ModelView", importing: bool = False) -> None:
         self.model_view = model_view
+        self.importing = importing
 
     def _get_to_many_stmt(self, relation: MODEL_PROPERTY, values: list[Any]) -> Select:
         target = relation.mapper.class_
@@ -102,7 +103,7 @@ class Query:
             if relation:
                 direction = get_direction(relation)
                 if direction in ["ONETOMANY", "MANYTOMANY"]:
-                    if self.model_view.importing:
+                    if self.importing:
                         target = relation.mapper.class_
                         _related_objs = session.execute(select(target)).scalars().all()
                         related_objs = self._set_to_many_by_str(_related_objs, value)
@@ -111,7 +112,7 @@ class Query:
                         related_objs = session.execute(related_stmt).scalars().all()
                     setattr(obj, key, related_objs)
                 elif direction == "ONETOONE":
-                    if self.model_view.importing:
+                    if self.importing:
                         target = relation.mapper.class_
                         _related_objs = session.execute(select(target)).scalars().all()
                         related_objs = self._set_to_one_by_str(related_objs, value)
@@ -143,7 +144,7 @@ class Query:
             if relation:
                 direction = get_direction(relation)
                 if direction in ["ONETOMANY", "MANYTOMANY"]:
-                    if self.model_view.importing:
+                    if self.importing:
                         target = relation.mapper.class_
                         result = await session.execute(select(target))
                         _related_objs = result.scalars().all()
@@ -154,7 +155,7 @@ class Query:
                         related_objs = result.scalars().all()
                     setattr(obj, key, related_objs)
                 elif direction == "ONETOONE":
-                    if self.model_view.importing:
+                    if self.importing:
                         target = relation.mapper.class_
                         result = await session.execute(select(target))
                         _related_objs = result.scalars().all()
@@ -252,7 +253,9 @@ class Query:
             await self.model_view.after_model_change(data, obj, True, request)
             return obj
 
-    def _insert_sync_many(self, data: list[dict[str, Any]], request: Request) -> Any:
+    def _insert_sync_many(
+        self, data: list[dict[str, Any]], request: Request
+    ) -> list[Any]:
         objs = []
         with self.model_view.session_maker(expire_on_commit=False) as session:
             for row in data:
@@ -272,12 +275,11 @@ class Query:
 
     async def _insert_async_many(
         self, data: list[dict[str, Any]], request: Request
-    ) -> Any:
+    ) -> list[Any]:
         objs = []
         async with self.model_view.session_maker(expire_on_commit=False) as session:
             for row in data:
                 obj = self.model_view.model()
-                # print(obj)
                 await self.model_view.on_model_change(row, obj, True, request)
                 obj = await self._set_attributes_async(session, obj, row)
                 objs.append(obj)

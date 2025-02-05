@@ -1053,9 +1053,12 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         return await Query(self).insert(data, request)
 
     async def insert_many_models(
-        self, request: Request, data: list[dict[str, Any]]
+        self,
+        request: Request,
+        data: Any,
+        importing: bool = False,
     ) -> Any:
-        return await Query(self).insert_many(data, request)
+        return await Query(self, importing).insert_many(data, request)
 
     async def update_model(self, request: Request, pk: str, data: dict) -> Any:
         return await Query(self).update(pk, data, request)

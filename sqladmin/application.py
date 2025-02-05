@@ -182,14 +182,14 @@ class BaseAdmin:
                     func, "_label"
                 )
             if getattr(func, "_add_in_detail"):
-                view_instance._custom_actions_in_detail[getattr(func, "_slug")] = (
-                    getattr(func, "_label")
-                )
+                view_instance._custom_actions_in_detail[
+                    getattr(func, "_slug")
+                ] = getattr(func, "_label")
 
             if getattr(func, "_confirmation_message"):
-                view_instance._custom_actions_confirmation[getattr(func, "_slug")] = (
-                    getattr(func, "_confirmation_message")
-                )
+                view_instance._custom_actions_confirmation[
+                    getattr(func, "_slug")
+                ] = getattr(func, "_confirmation_message")
 
     def _handle_expose_decorated_func(
         self,
@@ -637,11 +637,22 @@ class Admin(BaseAdminView):
 
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
-        model_view.importing = True
 
         try:
-            data = await parse_csv(request)
-            await model_view.insert_many_models(request, data)
+            async with request.form(max_files=1) as form:
+                csv_file = form.get("csvfile")
+                assert isinstance(csv_file, UploadFile)
+                if (
+                    not csv_file
+                    or not csv_file.filename
+                    or not csv_file.filename.endswith(".csv")
+                ):
+                    return Response(content="Undefined file.", status_code=400)
+
+                csv_content = await csv_file.read()
+
+                data: list[dict[str | Any, str | Any]] = parse_csv(csv_content)
+                await model_view.insert_many_models(request, data, True)
 
         except Exception as e:
             logger.exception(e)

@@ -172,19 +172,14 @@ def stream_to_csv(
     return callback(writer)  # type: ignore
 
 
-async def parse_csv(request) -> list[dict[str, Any]]:
-    async with request.form(max_files=1) as form:
-        csv_file = form.get("csvfile")
-        if not csv_file or not csv_file.filename.endswith(".csv"):
-            raise csv.Error
-        csv_content = await csv_file.read()
-        csv_content = csv_content.decode("utf-8").splitlines()
-        reader = list(csv.DictReader(csv_content, delimiter=";"))
-        for row in reader:
-            for k, v in row.items():
-                if v and "," in v:
-                    row[k] = v.split(",")
-        return reader
+def parse_csv(csv_content: bytes) -> list[dict[str | Any, str | Any]]:
+    _csv_content = csv_content.decode("utf-8").splitlines()
+    reader = list(csv.DictReader(_csv_content, delimiter=";"))
+    for row in reader:
+        for k, v in row.items():
+            if v and "," in v:
+                row[k] = v.split(",")
+    return reader
 
 
 def get_primary_keys(model: Any) -> tuple[Column, ...]:
