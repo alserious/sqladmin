@@ -133,7 +133,7 @@ class Author(Base):
 
     id = Column(Integer, primary_key=True)
     name = Column(String)
-    books: Mapped[list["Book"] | None] = relationship(
+    books = relationship(
         "Book", secondary=association_table
     )
 
