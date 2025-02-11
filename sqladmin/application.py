@@ -182,14 +182,14 @@ class BaseAdmin:
                     func, "_label"
                 )
             if getattr(func, "_add_in_detail"):
-                view_instance._custom_actions_in_detail[
-                    getattr(func, "_slug")
-                ] = getattr(func, "_label")
+                view_instance._custom_actions_in_detail[getattr(func, "_slug")] = (
+                    getattr(func, "_label")
+                )
 
             if getattr(func, "_confirmation_message"):
-                view_instance._custom_actions_confirmation[
-                    getattr(func, "_slug")
-                ] = getattr(func, "_confirmation_message")
+                view_instance._custom_actions_confirmation[getattr(func, "_slug")] = (
+                    getattr(func, "_confirmation_message")
+                )
 
     def _handle_expose_decorated_func(
         self,
@@ -541,7 +541,7 @@ class Admin(BaseAdminView):
             return await self.templates.TemplateResponse(
                 request, model_view.create_template, context, status_code=400
             )
-
+        print(f"{form.data=}")
         form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
         try:
             obj = await model_view.insert_model(request, form_data_dict)
@@ -633,26 +633,49 @@ class Admin(BaseAdminView):
 
     @login_required
     async def import_endpoint(self, request: Request) -> Response:
+        """Import model endpoint."""
+
         await self._import(request)
 
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
 
+        # a = await model_view.get_relation_objects()
+        # print(a)
+
         try:
-            async with request.form(max_files=1) as form:
-                csv_file = form.get("csvfile")
-                assert isinstance(csv_file, UploadFile)
-                if (
-                    not csv_file
-                    or not csv_file.filename
-                    or not csv_file.filename.endswith(".csv")
-                ):
-                    return Response(content="Undefined file.", status_code=400)
+            csv_content = await self._handle_form_file(request)
+            if not csv_content:
+                return Response(content="Undefined file.", status_code=400)
 
-                csv_content = await csv_file.read()
+            data = parse_csv(csv_content)
+            # print(f"{data=}")
 
-                data: list[dict[str | Any, str | Any]] = parse_csv(csv_content)
-                await model_view.insert_many_models(request, data, True)
+            Form = await model_view.scaffold_form(model_view._form_create_rules)
+
+            for relation in model_view._mapper.relationships:
+                relation_name = relation.key
+                relation_objs = await model_view.get_relation_objects(relation.target)
+
+                for relation_obj in relation_objs:
+                    print(str(relation_obj))
+                    for row in data:
+                        if row[relation_name] == relation_obj:
+                            print("ok")
+                            row[relation_name] = relation_obj.pk
+
+
+
+
+            print(data)
+
+                # form = Form(row)
+
+
+                # print(f"{form.data=}")
+
+                # pass
+                # getobject_by_orm
 
         except Exception as e:
             logger.exception(e)
@@ -661,6 +684,63 @@ class Admin(BaseAdminView):
         return RedirectResponse(
             url=request.url_for("admin:list", identity=identity), status_code=302
         )
+
+        # try:
+        #             # form_data = await self._handle_form_data(request)
+        #             print(f"{form_data=}")
+        #             form = Form(form_data)
+
+        #             context = {
+        #                 "model_view": model_view,
+        #                 "form": form,
+        #             }
+
+        #             if not form.validate():
+        #                 return await self.templates.TemplateResponse(
+        #                     request,
+        #                     model_view.create_template,
+        #                     context,
+        #                     status_code=400,
+        #                 )
+        #             print(f"{form.data=}")
+
+        #             form_data_dict = self._denormalize_wtform_data(
+        #                 form.data, model_view.model
+        #             )
+
+        #             datas.append(form_data_dict)
+        #         print(f"{datas=}")
+        #         await model_view.insert_many_models(request, datas, True)
+        #         # obj = await model_view.insert_model(request, form_data_dict)
+        #         # try:
+        #         #     obj = await model_view.insert_model(request, form_data_dict)
+        #         # except Exception as e:
+        #         #     logger.exception(e)
+        #         #     context["error"] = str(e)
+        #         #     return await self.templates.TemplateResponse(
+        #         #         request,
+        #         #         model_view.create_template,
+        #         #         context,
+        #         #         status_code=400,
+        #         #     )
+
+        #         # url = self.get_save_redirect_url(
+        #         #     request=request,
+        #         #     form=form_data,
+        #         #     obj=obj,
+        #         #     model_view=model_view,
+        #         # )
+        #         # return RedirectResponse(url=url, status_code=302)
+
+        #         # await model_view.insert_many_models(request, data, True)
+
+        # except Exception as e:
+        #     logger.exception(e)
+        #     return Response(content=f"Failed parse CSV file.\n{e}", status_code=400)
+
+        # return RedirectResponse(
+        #     url=request.url_for("admin:list", identity=identity), status_code=302
+        # )
 
     async def login(self, request: Request) -> Response:
         assert self.authentication_backend is not None
@@ -748,6 +828,19 @@ class Admin(BaseAdminView):
             else:
                 form_data.append((key, value))
         return FormData(form_data)
+
+    async def _handle_form_file(self, request: Request) -> bytes | None:
+        async with request.form(max_files=1) as form:
+            csv_file = form.get("csvfile")
+            assert isinstance(csv_file, UploadFile)
+            if (
+                not csv_file
+                or not csv_file.filename
+                or not csv_file.filename.endswith(".csv")
+            ):
+                return None
+            csv_content = await csv_file.read()
+        return csv_content
 
     def _normalize_wtform_data(self, obj: Any) -> dict:
         form_data = {}

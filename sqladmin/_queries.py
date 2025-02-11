@@ -277,8 +277,10 @@ class Query:
         self, data: list[dict[str, Any]], request: Request
     ) -> list[Any]:
         objs = []
+        print(f"{data=}")
         async with self.model_view.session_maker(expire_on_commit=False) as session:
             for row in data:
+                print(f"{row=}")
                 obj = self.model_view.model()
                 await self.model_view.on_model_change(row, obj, True, request)
                 obj = await self._set_attributes_async(session, obj, row)
@@ -312,3 +314,9 @@ class Query:
             return await self._update_async(pk, data, request)
         else:
             return await anyio.to_thread.run_sync(self._update_sync, pk, data, request)
+
+    async def select_by_str_method(self, data: list[dict[str, Any]], request: Request) -> Any:
+        if self.model_view.is_async:
+            return await self._insert_async_many(data, request)
+        else:
+            return await anyio.to_thread.run_sync(self._insert_sync_many, data, request)

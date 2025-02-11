@@ -18,6 +18,7 @@ from typing import (
 from sqlalchemy import Column, inspect
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import RelationshipProperty, sessionmaker
+from starlette.datastructures import MultiDict
 
 from sqladmin._types import MODEL_PROPERTY
 
@@ -172,14 +173,20 @@ def stream_to_csv(
     return callback(writer)  # type: ignore
 
 
-def parse_csv(csv_content: bytes) -> list[dict[str | Any, str | Any]]:
+def parse_csv(csv_content: bytes, delimiter: str = ";") -> list[MultiDict]:
     _csv_content = csv_content.decode("utf-8").splitlines()
-    reader = list(csv.DictReader(_csv_content, delimiter=";"))
+    reader = csv.DictReader(_csv_content, delimiter=delimiter)
+    result = []
     for row in reader:
-        for k, v in row.items():
-            if v and "," in v:
-                row[k] = v.split(",")
-    return reader
+        md = MultiDict()
+        for column, value in row.items():
+            if value and "," in value:
+                for iter_value in value.split(","):
+                    md.append(column, iter_value)
+            else:
+                md.append(column, value)
+        result.append(md)
+    return result
 
 
 def get_primary_keys(model: Any) -> tuple[Column, ...]:

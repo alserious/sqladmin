@@ -873,6 +873,24 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         rows = await self._run_query(stmt)
         return rows
 
+    async def get_relation_objects(self, relation) -> AsyncGenerator[Any, Any]:
+        # For unlimited rows this should pass None
+        # for relation in self._mapper.relationships:
+            # print(relation.target)
+            # for relation in self._relation_names:
+        stmt = select(relation)
+        # stmt = select(relation.target)
+        print(stmt)
+        
+        # rows = await self._run_query(stmt)
+        async with self.session_maker(expire_on_commit=False) as session:
+            result = await session.execute(stmt)
+        return result
+        # return rows
+            # yield rows
+        # rows = await self._run_query(stmt)
+        # return rows
+
     async def _get_object_by_pk(self, stmt: Select) -> Any:
         rows = await self._run_query(stmt)
         return rows[0] if rows else None
@@ -1059,6 +1077,9 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         importing: bool = False,
     ) -> Any:
         return await Query(self, importing).insert_many(data, request)
+
+    async def select_model_by_str_method(self, str_value: str) -> Any:
+        return await Query(self).select_by_str_method(str_value)
 
     async def update_model(self, request: Request, pk: str, data: dict) -> Any:
         return await Query(self).update(pk, data, request)
