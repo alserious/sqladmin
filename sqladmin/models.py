@@ -1066,9 +1066,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
     ) -> Any:
         return await Query(self, importing).insert_many(data, request)
 
-    async def select_model_by_str_method(self, str_value: str) -> Any:
-        return await Query(self).select_by_str_method(str_value)
-
     async def update_model(self, request: Request, pk: str, data: dict) -> Any:
         return await Query(self).update(pk, data, request)
 

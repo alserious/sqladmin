@@ -276,11 +276,3 @@ class Query:
             return await self._update_async(pk, data, request)
         else:
             return await anyio.to_thread.run_sync(self._update_sync, pk, data, request)
-
-    async def select_by_str_method(
-        self, data: list[dict[str, Any]], request: Request
-    ) -> Any:
-        if self.model_view.is_async:
-            return await self._insert_async_many(data, request)
-        else:
-            return await anyio.to_thread.run_sync(self._insert_sync_many, data, request)
