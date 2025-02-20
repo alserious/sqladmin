@@ -22,7 +22,7 @@ from typing import (
 from urllib.parse import urlencode
 
 import anyio
-from sqlalchemy import Column, String, asc, cast, desc, func, inspect, or_
+from sqlalchemy import Column, String, Table, asc, cast, desc, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
 from sqlalchemy.orm import selectinload, sessionmaker
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -873,11 +873,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         rows = await self._run_query(stmt)
         return rows
 
-    async def get_relation_objects(self, relation) -> AsyncGenerator[Any, Any]:
-        stmt = select(relation)
-        async with self.session_maker(expire_on_commit=False) as session:
-            result = await session.scalars(stmt)
-        return result.all()
+    async def get_relation_objects(self, relation: Table) -> Any:
+        return await Query(self).get_relation_objects(relation)
 
     async def _get_object_by_pk(self, stmt: Select) -> Any:
         rows = await self._run_query(stmt)
@@ -1062,9 +1059,8 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         self,
         request: Request,
         data: Any,
-        importing: bool = False,
     ) -> Any:
-        return await Query(self, importing).insert_many(data, request)
+        return await Query(self).insert_many(data, request)
 
     async def update_model(self, request: Request, pk: str, data: dict) -> Any:
         return await Query(self).update(pk, data, request)

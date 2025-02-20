@@ -657,6 +657,8 @@ class Admin(BaseAdminView):
             relation_mapper = relation.mapper.class_
 
             relation_objs = await model_view.get_relation_objects(relation_mapper)
+            if not relation_objs:
+                continue
             for relation_obj in relation_objs:
                 for row in data:
                     n_row = []
