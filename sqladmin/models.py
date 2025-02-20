@@ -874,22 +874,10 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
         return rows
 
     async def get_relation_objects(self, relation) -> AsyncGenerator[Any, Any]:
-        # For unlimited rows this should pass None
-        # for relation in self._mapper.relationships:
-            # print(relation.target)
-            # for relation in self._relation_names:
         stmt = select(relation)
-        # stmt = select(relation.target)
-        print(stmt)
-        
-        # rows = await self._run_query(stmt)
         async with self.session_maker(expire_on_commit=False) as session:
-            result = await session.execute(stmt)
-        return result
-        # return rows
-            # yield rows
-        # rows = await self._run_query(stmt)
-        # return rows
+            result = await session.scalars(stmt)
+        return result.all()
 
     async def _get_object_by_pk(self, stmt: Select) -> Any:
         rows = await self._run_query(stmt)

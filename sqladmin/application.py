@@ -525,6 +525,7 @@ class Admin(BaseAdminView):
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
         form_data = await self._handle_form_data(request)
+        print(form_data)
         form = Form(form_data)
 
         context = {
@@ -640,107 +641,50 @@ class Admin(BaseAdminView):
         identity = request.path_params["identity"]
         model_view = self._find_model_view(identity)
 
-        # a = await model_view.get_relation_objects()
-        # print(a)
-
         try:
             csv_content = await self._handle_form_file(request)
             if not csv_content:
                 return Response(content="Undefined file.", status_code=400)
 
             data = parse_csv(csv_content)
-            # print(f"{data=}")
-
-            Form = await model_view.scaffold_form(model_view._form_create_rules)
-
-            for relation in model_view._mapper.relationships:
-                relation_name = relation.key
-                relation_objs = await model_view.get_relation_objects(relation.target)
-
-                for relation_obj in relation_objs:
-                    print(str(relation_obj))
-                    for row in data:
-                        if row[relation_name] == relation_obj:
-                            print("ok")
-                            row[relation_name] = relation_obj.pk
-
-
-
-
-            print(data)
-
-                # form = Form(row)
-
-
-                # print(f"{form.data=}")
-
-                # pass
-                # getobject_by_orm
 
         except Exception as e:
             logger.exception(e)
             return Response(content=f"Failed parse CSV file.\n{e}", status_code=400)
 
+        print(data)
+        Form = await model_view.scaffold_form(model_view._form_create_rules)
+        for relation in model_view._mapper.relationships:
+            relation_name = relation.key
+            relation_mapper = relation.mapper.class_
+
+            relation_objs = await model_view.get_relation_objects(relation_mapper)
+
+            for relation_obj in relation_objs:
+                for row in data:
+                    _b = []
+                    for i in row.getlist(relation_name):
+                        if i == str(relation_obj):
+                            _b.append(str(relation_obj.id))
+                        else:
+                            _b.append(i)
+                    row.setlist(relation_name, _b)
+
+        aa = []
+        print(data)
+        for ij in data:
+            form = Form(ij)
+            print(f"{form.data=}")
+            if not form.validate():
+                continue
+            form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
+            aa.append(form_data_dict)
+
+        await model_view.insert_many_models(request, aa, False)
+
         return RedirectResponse(
             url=request.url_for("admin:list", identity=identity), status_code=302
         )
-
-        # try:
-        #             # form_data = await self._handle_form_data(request)
-        #             print(f"{form_data=}")
-        #             form = Form(form_data)
-
-        #             context = {
-        #                 "model_view": model_view,
-        #                 "form": form,
-        #             }
-
-        #             if not form.validate():
-        #                 return await self.templates.TemplateResponse(
-        #                     request,
-        #                     model_view.create_template,
-        #                     context,
-        #                     status_code=400,
-        #                 )
-        #             print(f"{form.data=}")
-
-        #             form_data_dict = self._denormalize_wtform_data(
-        #                 form.data, model_view.model
-        #             )
-
-        #             datas.append(form_data_dict)
-        #         print(f"{datas=}")
-        #         await model_view.insert_many_models(request, datas, True)
-        #         # obj = await model_view.insert_model(request, form_data_dict)
-        #         # try:
-        #         #     obj = await model_view.insert_model(request, form_data_dict)
-        #         # except Exception as e:
-        #         #     logger.exception(e)
-        #         #     context["error"] = str(e)
-        #         #     return await self.templates.TemplateResponse(
-        #         #         request,
-        #         #         model_view.create_template,
-        #         #         context,
-        #         #         status_code=400,
-        #         #     )
-
-        #         # url = self.get_save_redirect_url(
-        #         #     request=request,
-        #         #     form=form_data,
-        #         #     obj=obj,
-        #         #     model_view=model_view,
-        #         # )
-        #         # return RedirectResponse(url=url, status_code=302)
-
-        #         # await model_view.insert_many_models(request, data, True)
-
-        # except Exception as e:
-        #     logger.exception(e)
-        #     return Response(content=f"Failed parse CSV file.\n{e}", status_code=400)
-
-        # return RedirectResponse(
-        #     url=request.url_for("admin:list", identity=identity), status_code=302
-        # )
 
     async def login(self, request: Request) -> Response:
         assert self.authentication_backend is not None
