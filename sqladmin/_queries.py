@@ -23,9 +23,8 @@ if TYPE_CHECKING:
 
 
 class Query:
-    def __init__(self, model_view: "ModelView", importing: bool = False) -> None:
+    def __init__(self, model_view: "ModelView") -> None:
         self.model_view = model_view
-        self.importing = importing
 
     def _get_to_many_stmt(self, relation: MODEL_PROPERTY, values: list[Any]) -> Select:
         target = relation.mapper.class_
@@ -59,21 +58,6 @@ class Query:
         related_stmt = select(target).where(*conditions)
         return related_stmt
 
-    def _set_to_one_by_str(self, related_objs: list[Any], value: Any) -> list[Any]:
-        return [
-            related_obj for related_obj in related_objs if str(related_obj) == value
-        ]
-
-    def _set_to_many_by_str(
-        self, related_objs: list[Any], values: list[Any]
-    ) -> list[Any]:
-        return [
-            related_obj
-            for value in values
-            for related_obj in related_objs
-            if str(related_obj) == value
-        ]
-
     def _set_many_to_one(self, obj: Any, relation: MODEL_PROPERTY, ident: Any) -> Any:
         values = object_identifier_values(ident, relation.entity)
         pks = get_primary_keys(relation.entity)
@@ -103,22 +87,12 @@ class Query:
             if relation:
                 direction = get_direction(relation)
                 if direction in ["ONETOMANY", "MANYTOMANY"]:
-                    if self.importing:
-                        target = relation.mapper.class_
-                        _related_objs = session.execute(select(target)).scalars().all()
-                        related_objs = self._set_to_many_by_str(_related_objs, value)
-                    else:
-                        related_stmt = self._get_to_many_stmt(relation, value)
-                        related_objs = session.execute(related_stmt).scalars().all()
+                    related_stmt = self._get_to_many_stmt(relation, value)
+                    related_objs = session.execute(related_stmt).scalars().all()
                     setattr(obj, key, related_objs)
                 elif direction == "ONETOONE":
-                    if self.importing:
-                        target = relation.mapper.class_
-                        _related_objs = session.execute(select(target)).scalars().all()
-                        related_objs = self._set_to_one_by_str(related_objs, value)
-                    else:
-                        related_stmt = self._get_to_one_stmt(relation, value)
-                        related_obj = session.execute(related_stmt).scalars().first()
+                    related_stmt = self._get_to_one_stmt(relation, value)
+                    related_obj = session.execute(related_stmt).scalars().first()
                     setattr(obj, key, related_obj)
                 else:
                     obj = self._set_many_to_one(obj, relation, value)
@@ -144,26 +118,14 @@ class Query:
             if relation:
                 direction = get_direction(relation)
                 if direction in ["ONETOMANY", "MANYTOMANY"]:
-                    if self.importing:
-                        target = relation.mapper.class_
-                        result = await session.execute(select(target))
-                        _related_objs = result.scalars().all()
-                        related_objs = self._set_to_many_by_str(_related_objs, value)
-                    else:
-                        related_stmt = self._get_to_many_stmt(relation, value)
-                        result = await session.execute(related_stmt)
-                        related_objs = result.scalars().all()
+                    related_stmt = self._get_to_many_stmt(relation, value)
+                    result = await session.execute(related_stmt)
+                    related_objs = result.scalars().all()
                     setattr(obj, key, related_objs)
                 elif direction == "ONETOONE":
-                    if self.importing:
-                        target = relation.mapper.class_
-                        result = await session.execute(select(target))
-                        _related_objs = result.scalars().all()
-                        related_objs = self._set_to_one_by_str(_related_objs, value)
-                    else:
-                        related_stmt = self._get_to_one_stmt(relation, value)
-                        result = await session.execute(related_stmt)
-                        related_obj = result.scalars().first()
+                    related_stmt = self._get_to_one_stmt(relation, value)
+                    result = await session.execute(related_stmt)
+                    related_obj = result.scalars().first()
                     setattr(obj, key, related_obj)
                 else:
                     obj = self._set_many_to_one(obj, relation, value)
@@ -315,7 +277,9 @@ class Query:
         else:
             return await anyio.to_thread.run_sync(self._update_sync, pk, data, request)
 
-    async def select_by_str_method(self, data: list[dict[str, Any]], request: Request) -> Any:
+    async def select_by_str_method(
+        self, data: list[dict[str, Any]], request: Request
+    ) -> Any:
         if self.model_view.is_async:
             return await self._insert_async_many(data, request)
         else:

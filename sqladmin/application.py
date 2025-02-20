@@ -525,7 +525,6 @@ class Admin(BaseAdminView):
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
         form_data = await self._handle_form_data(request)
-        print(form_data)
         form = Form(form_data)
 
         context = {
@@ -542,7 +541,7 @@ class Admin(BaseAdminView):
             return await self.templates.TemplateResponse(
                 request, model_view.create_template, context, status_code=400
             )
-        print(f"{form.data=}")
+
         form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
         try:
             obj = await model_view.insert_model(request, form_data_dict)
@@ -652,35 +651,31 @@ class Admin(BaseAdminView):
             logger.exception(e)
             return Response(content=f"Failed parse CSV file.\n{e}", status_code=400)
 
-        print(data)
         Form = await model_view.scaffold_form(model_view._form_create_rules)
         for relation in model_view._mapper.relationships:
             relation_name = relation.key
             relation_mapper = relation.mapper.class_
 
             relation_objs = await model_view.get_relation_objects(relation_mapper)
-
             for relation_obj in relation_objs:
                 for row in data:
-                    _b = []
-                    for i in row.getlist(relation_name):
-                        if i == str(relation_obj):
-                            _b.append(str(relation_obj.id))
+                    n_row = []
+                    for value in row.getlist(relation_name):
+                        if value == str(relation_obj):
+                            n_row.append(str(relation_obj.id))
                         else:
-                            _b.append(i)
-                    row.setlist(relation_name, _b)
+                            n_row.append(value)
+                    row.setlist(relation_name, n_row)
 
-        aa = []
-        print(data)
-        for ij in data:
-            form = Form(ij)
-            print(f"{form.data=}")
+        import_models = []
+        for row in data:
+            form = Form(row)
             if not form.validate():
                 continue
             form_data_dict = self._denormalize_wtform_data(form.data, model_view.model)
-            aa.append(form_data_dict)
+            import_models.append(form_data_dict)
 
-        await model_view.insert_many_models(request, aa, False)
+        await model_view.insert_many_models(request, import_models)
 
         return RedirectResponse(
             url=request.url_for("admin:list", identity=identity), status_code=302
