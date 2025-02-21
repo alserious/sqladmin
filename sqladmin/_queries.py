@@ -239,10 +239,8 @@ class Query:
         self, data: list[dict[str, Any]], request: Request
     ) -> list[Any]:
         objs = []
-        print(f"{data=}")
         async with self.model_view.session_maker(expire_on_commit=False) as session:
             for row in data:
-                print(f"{row=}")
                 obj = self.model_view.model()
                 await self.model_view.on_model_change(row, obj, True, request)
                 obj = await self._set_attributes_async(session, obj, row)
@@ -266,9 +264,11 @@ class Query:
 
     async def get_relation_objects(self, relation: Table) -> Any:
         if self.model_view.is_async:
-            await self._get_relation_objects_async(relation)
+            return await self._get_relation_objects_async(relation)
         else:
-            await anyio.to_thread.run_sync(self._get_relation_objects_sync, relation)
+            return await anyio.to_thread.run_sync(
+                self._get_relation_objects_sync, relation
+            )
 
     async def delete(self, obj: Any, request: Request) -> None:
         if self.model_view.is_async:

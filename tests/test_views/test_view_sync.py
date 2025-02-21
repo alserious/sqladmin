@@ -197,7 +197,7 @@ class AddressAdmin(ModelView, model=Address):
     column_list = ["id", "user_id", "user", "user.profile.id"]
     name_plural = "Addresses"
     export_max_rows = 3
-    column_import_list = ["id", "user_id"]
+    column_import_list = ["user"]
     can_import = True
 
 
@@ -225,7 +225,7 @@ class AuthorAdmin(ModelView, model=Author):
 
 class BookAdmin(ModelView, model=Book):
     column_list = [Book.id, Book.title, Book.text]
-    column_import_list = [Book.id, Book.title, Book.text]
+    column_import_list = [Book.title, Book.text]
     can_import = True
 
 
@@ -887,7 +887,7 @@ def test_import_csv_file_with_fk(client: TestClient) -> None:
         files={
             "csvfile": (
                 "address.csv",
-                b"id;user_id\r\n1;1\r\n2;2\r\n",
+                b"id;user\r\n1;User 1\r\n2;User 2\r\n",
                 "text/csv",
             )
         },
@@ -922,9 +922,9 @@ def test_import_csv_file_with_many_to_many(client: TestClient) -> None:
         result = s.execute(select(Book).order_by(Book.id))
         books = list(result.scalars())
     assert books[0].title == "cool book"
-    assert books[0].id == 1
+    assert books[0].text == "Once upon a time"
     assert books[1].title == "good_book"
-    assert books[1].id == 2
+    assert books[1].text == "Well..."
 
     files = {
         "csvfile": (
