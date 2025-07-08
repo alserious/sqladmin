@@ -276,6 +276,7 @@ class EachRowActionAdmin(ModelView, model=EachRowAction):
 class ProductAdmin(ModelView, model=Product):
     pass
 
+
 class AuthorAdmin(ModelView, model=Author):
     column_list = [Author.id, Author.name, Author.books]
     column_import_list = [Author.name, Author.books]
