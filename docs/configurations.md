@@ -427,8 +427,6 @@ class ExamResultAdmin(ModelView, model=ExamResult):
 ## Import options
 
 SQLAdmin supports importing data from a CSV file in the list page.
-If the model has relations, the association will be according by ID.
-
 The import options can be set per model and includes the following options:
 
 * `can_import`: If the model can be imported. Default value is `False`.
@@ -442,24 +440,11 @@ The import options can be set per model and includes the following options:
         __tablename__ = "users"
         id = Column(Integer, primary_key=True)
         name = Column(String)
-        addresses: Mapped[list["Address"] | None] = relationship(
-            "Address", secondary=association_table
-        )
-
-        def __str__(self) -> str:
-            return f"User {self.id}"
+        address = Column(String)
     
-    
-    class Address(Base):
-        __tablename__ = "addresses"
-        id = Column(Integer, primary_key=True)
-
-        def __str__(self) -> str:
-            return f"Address {self.id}"
-
     class UserAdmin(ModelView, model=User):
         can_import = True
-        column_import_list = [User.name, User.addresses]
+        column_import_list = [User.name, User.address]
     ```
 
 ## Templates

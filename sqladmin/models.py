@@ -24,7 +24,7 @@ from typing import cast as typing_cast
 from urllib.parse import urlencode
 
 import anyio
-from sqlalchemy import Column, String, Table, asc, cast, false, desc, func, inspect, or_
+from sqlalchemy import Column, String, asc, cast, desc, false, func, inspect, or_
 from sqlalchemy.exc import NoInspectionAvailable
 from sqlalchemy.orm import selectinload
 from sqlalchemy.orm.exc import DetachedInstanceError
@@ -948,9 +948,6 @@ class ModelView(BaseView, metaclass=ModelViewMeta):
 
         rows = await self._run_query(stmt)
         return rows
-
-    async def get_relation_objects(self, relation: Table) -> Any:
-        return await Query(self).get_relation_objects(relation)
 
     async def _get_object_by_pk(self, stmt: Select) -> Any:
         rows = await self._run_query(stmt)

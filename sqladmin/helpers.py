@@ -22,7 +22,7 @@ from typing import (
 from sqlalchemy import Column
 from sqlalchemy import inspect as sa_inspect
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import RelationshipProperty, sessionmaker
+from sqlalchemy.orm import RelationshipProperty
 from starlette.datastructures import MultiDict
 
 from sqladmin._types import MODEL_PROPERTY, SESSION_MAKER
