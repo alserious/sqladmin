@@ -194,8 +194,6 @@ class AddressAdmin(ModelView, model=Address):
     search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
-    column_import_list = ["user"]
-    can_import = True
 
 
 class ProfileAdmin(ModelView, model=Profile):
