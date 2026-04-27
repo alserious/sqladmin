@@ -857,7 +857,8 @@ class Admin(BaseAdminView):
             csv_content = await csv_file.read()
         return csv_content
 
-    def _normalize_wtform_data(self, obj: Any) -> dict:
+    @staticmethod
+    def _normalize_wtform_data(obj: Any) -> dict:
         form_data = {}
         for field_name in WTFORMS_ATTRS:
             if value := getattr(obj, field_name, None):
