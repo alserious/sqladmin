@@ -427,10 +427,7 @@ class ExamResultAdmin(ModelView, model=ExamResult):
 ## Import options
 
 SQLAdmin supports importing data from a CSV file in the list page.
-If the model has relations, the association will be according to the returned data `__str__` method of the SQLAlchemy model.
-Relation models in a CSV file separated by a comma.
-
-![import_csv](assets/images/import_csv.png)
+If the model has relations, the association will be according by ID.
 
 The import options can be set per model and includes the following options:
 

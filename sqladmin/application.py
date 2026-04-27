@@ -726,22 +726,6 @@ class Admin(BaseAdminView):
             return Response(content=f"Failed parse CSV file.\n{e}", status_code=400)
 
         Form = await model_view.scaffold_form(model_view._form_create_rules)
-        for relation in model_view._mapper.relationships:
-            relation_name = relation.key
-            relation_mapper = relation.mapper.class_
-
-            relation_objs = await model_view.get_relation_objects(relation_mapper)
-            if not relation_objs:
-                continue
-            for relation_obj in relation_objs:
-                for row in data:
-                    n_row = []
-                    for value in row.getlist(relation_name):
-                        if value == str(relation_obj):
-                            n_row.append(str(relation_obj.id))
-                        else:
-                            n_row.append(value)
-                    row.setlist(relation_name, n_row)
 
         import_models = []
         for row in data:

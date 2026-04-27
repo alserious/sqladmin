@@ -184,7 +184,7 @@ def stream_to_csv(
 
 
 def parse_csv(
-    csv_content: bytes, columns: list[str], delimiter: str = ";"
+    csv_content: bytes, columns: list[str], delimiter: str = ","
 ) -> list[MultiDict]:
     if csv_content[:3] == b"\xef\xbb\xbf":
         csv_content = csv_content[3:]
@@ -196,11 +196,7 @@ def parse_csv(
         for column, value in row.items():
             if column not in columns:
                 continue
-            if value and "," in value:
-                for iter_value in value.split(","):
-                    md.append(column, iter_value)
-            else:
-                md.append(column, value)
+            md.append(column, value)
         result.append(md)
     return result
 

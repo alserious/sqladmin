@@ -114,7 +114,7 @@ class ModelViewMeta(type):
         mcs._check_conflicting_options(
             ["column_export_list", "column_export_exclude_list"], attrs
         )
-        mcls._check_conflicting_options(
+        mcs._check_conflicting_options(
             ["column_import_list", "column_import_exclude_list"], attrs
         )
 
