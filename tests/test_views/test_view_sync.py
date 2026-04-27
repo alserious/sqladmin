@@ -121,7 +121,7 @@ class Product(Base):
     is_sold = Column(Boolean, nullable=False)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 def prepare_database() -> Generator[None, None, None]:
     Base.metadata.create_all(engine)
     yield
@@ -174,8 +174,6 @@ class AddressAdmin(ModelView, model=Address):
     search_auto_submit = False
     name_plural = "Addresses"
     export_max_rows = 3
-    column_import_list = ["user"]
-    can_import = True
 
 
 class ProfileAdmin(ModelView, model=Profile):
@@ -967,7 +965,7 @@ def test_import_csv_file(client: TestClient) -> None:
         files={
             "csvfile": (
                 "user.csv",
-                b"name;status\r\nUSER_1;ACTIVE\r\nUSER_2;DEACTIVE\r\n",
+                b"name,status\r\nUSER_1,ACTIVE\r\nUSER_2,DEACTIVE\r\n",
                 "text/csv",
             )
         },

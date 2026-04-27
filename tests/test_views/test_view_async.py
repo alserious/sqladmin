@@ -1049,7 +1049,7 @@ async def test_import_csv_file(client: AsyncClient) -> None:
         files={
             "csvfile": (
                 "user.csv",
-                b"name;status\r\nUSER_1;ACTIVE\r\nUSER_2;DEACTIVE\r\n",
+                b"name,status\r\nUSER_1,ACTIVE\r\nUSER_2,DEACTIVE\r\n",
                 "text/csv",
             )
         },
