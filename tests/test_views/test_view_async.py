@@ -136,7 +136,7 @@ class EachRowAction(Base):
     can_delete = Column(Boolean, nullable=True, default=True)
 
 
-@pytest.fixture
+@pytest.fixture(autouse=True)
 async def prepare_database() -> AsyncGenerator[None, None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
